@@ -1,0 +1,155 @@
+# Real Estate Starter — Docker Compose for VPS deployment
+#
+# Docker Compose for VPS deployment (works with Coolify or plain compose).
+# This file is the reference config for production — adjust env vars per
+# project before deploying.
+#
+# Services:
+#   postgres    Postgres 16 with max_connections=300 (the connection-limit note, 150-user cap)
+#   pgbouncer   PgBouncer in session pooling mode (the pool-mode requirement — REQUIRED for RLS)
+#   redis       Redis 7 (SSE pub/sub + cron locks + rate limiting)
+#   api         NestJS 12 backend (port 8080)
+#   web         Next.js 16 frontend (port 3000) — placeholder, not built in Phase 1
+#
+# Usage:
+#   docker compose -f docker/docker-compose.yml config   # validate
+#   docker compose -f docker/docker-compose.yml up -d   # start
+#   docker compose -f docker/docker-compose.yml logs -f # tail logs
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: starter-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: starter
+      POSTGRES_PASSWORD: starter
+      POSTGRES_DB: starter_crm
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    command:
+      # the connection-limit note: max_connections=300 supports ~150 concurrent users
+      # (2 SSE streams/user × 150 = 300 backend sessions).
+      - "postgres"
+      - "-c"
+      - "max_connections=300"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "work_mem=4MB"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U starter -d starter_crm"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgbouncer:
+    # edoburu/pgbouncer — actively maintained, CVE-patched upstream images.
+    # Bitnami moved bitnami/* behind a paid subscription in Aug 2025; the
+    # bitnamilegacy/* namespace is frozen at the version pinned and never
+    # receives security updates.
+    #
+    # SWITCHED from bitnamilegacy  (verified live before swap):
+    # - bitnami IGNORES the mounted docker/pgbouncer.ini and generates its
+    #   own from env vars — the source of the missing [databases] alias
+    #   (PGBOUNCER_DATABASE defaulted to 'postgres'), which silently broke
+    #   every starter_crm connection through the pool (see PGBOUNCER_DATABASE
+    #   note below for the archaeology).
+    # - edoburu's entrypoint only generates the ini when it does NOT exist
+    #   (`if [ ! -f ... ]`), so our mounted docker/pgbouncer.ini is used
+    #   as-is: pool_mode=session + [databases] starter_crm stay authoritative
+    #   in a file we control. Verified: pgbouncer 1.25.2 up, client SELECT OK,
+    #   SET LOCAL app.user_role inside a transaction (RLS requirement) OK.
+    # - Auth file untouched: entrypoint APPENDS credentials only when the
+    #   user is absent from userlist.txt.
+    # DB_USER/DB_PASSWORD/DB_HOST/DB_PORT/DB_NAME exist ONLY so the
+    # entrypoint can append missing userlist entries; all pool behavior
+    # lives in docker/pgbouncer.ini.
+    image: edoburu/pgbouncer:v1.25.2-p0
+    container_name: starter-pgbouncer
+    restart: unless-stopped
+    environment:
+      AUTH_TYPE: scram-sha-256
+      DB_USER: starter
+      DB_PASSWORD: starter
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: starter_crm
+    ports:
+      - "127.0.0.1:6432:6432"
+    volumes:
+      - ./pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini:ro
+      - ./userlist.txt:/etc/pgbouncer/userlist.txt:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    container_name: starter-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ..
+      dockerfile: apps/backend/Dockerfile
+    container_name: starter-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_PORT: "8080"
+      # Direct (admin) URL — bypasses PgBouncer. Used by migrations + RLS
+      # session variable writes.
+      # : app connects as the NON-OWNER role (RLS-enforced). Owner role
+      # `starter` is migrations/seed only (DIRECT_DATABASE_URL).
+      DIRECT_DATABASE_URL: postgresql://starter:starter@postgres:5432/starter_crm?schema=public
+      DATABASE_URL: postgresql://starter_app:starter@pgbouncer:6432/starter_crm?schema=public
+      # the pool-mode requirement: MUST be 'session' — NestJS boot-time check fails otherwise.
+      POOL_MODE: session
+      REDIS_URL: redis://redis:6379
+      CORS_ORIGINS: https://app.example.in,http://localhost:3000,http://localhost:8081
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET required (min 32 chars)}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://api.example.in}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET required (min 32 chars)}
+      JWT_ISSUER: real-estate-starter
+      # Client-input integrations — placeholders work; real values via deploy env.
+      WA_PHONE_NUMBER_ID: ${WA_PHONE_NUMBER_ID:-placeholder}
+      WA_BUSINESS_ACCOUNT_ID: ${WA_BUSINESS_ACCOUNT_ID:-placeholder}
+      WA_ACCESS_TOKEN: ${WA_ACCESS_TOKEN:-placeholder}
+      WA_WEBHOOK_VERIFY_TOKEN: ${WA_WEBHOOK_VERIFY_TOKEN:-placeholder}
+      FREJUN_API_KEY: ${FREJUN_API_KEY:-placeholder}
+      FREJUN_WEBHOOK_SECRET: ${FREJUN_WEBHOOK_SECRET:-placeholder}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      pgbouncer:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
+  # Web app is NOT built here by default. This stub stays so the deploy
+  # target can wire routing when apps/web Dockerfile is enabled.
+  # web:
+  #   build:
+  #     context: ..
+  #     dockerfile: apps/web/Dockerfile
+  #   ...
+
+volumes:
+  postgres_data:
+  redis_data:

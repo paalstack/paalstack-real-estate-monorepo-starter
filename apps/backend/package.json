@@ -1,0 +1,49 @@
+{
+  "name": "@starter/backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Real Estate Starter — NestJS 12 REST API",
+  "scripts": {
+    "dev": "tsx watch --env-file=../../.env src/main.ts",
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "start:dev": "tsx --env-file=../../.env src/main.ts",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --max-warnings 0",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@nestjs/common": "^12.0.0",
+    "@nestjs/core": "^12.0.0",
+    "@nestjs/platform-express": "^12.0.0",
+    "@nestjs/schedule": "^12.0.1",
+    "@nestjs/swagger": "^12.0.1",
+    "@starter/api-types": "workspace:*",
+    "@starter/auth": "workspace:*",
+    "@starter/database": "workspace:*",
+    "@starter/ui-tokens": "workspace:*",
+    "better-auth": "^1.2.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "ioredis": "^6.0.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@nestjs/cli": "^12.0.0",
+    "@nestjs/testing": "^12.0.0",
+    "@types/express": "^5.0.0",
+    "@types/node": "^26.4.0",
+    "@types/supertest": "^7.2.1",
+    "@typescript-eslint/eslint-plugin": "^8.68.0",
+    "@typescript-eslint/parser": "^8.68.0",
+    "eslint": "^10.9.1",
+    "supertest": "^7.0.0",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11"
+  }
+}

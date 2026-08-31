@@ -1,0 +1,33 @@
+{
+  "name": "real-estate-starter",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Real Estate Starter — Next.js 16 + NestJS 12 + Prisma monorepo",
+  "packageManager": "pnpm@11.24.0",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rm -rf node_modules .turbo",
+    "db:generate": "pnpm --filter @starter/database generate",
+    "db:migrate": "pnpm --filter @starter/database migrate",
+    "db:studio": "pnpm --filter @starter/database studio",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md,mdx}\" --cache",
+    "docker:up": "pnpm --filter @starter/database docker:up",
+    "db:seed": "pnpm --filter @starter/database seed",
+    "db:policies": "docker exec -i starter-postgres psql -U starter -d starter_crm -v ON_ERROR_STOP=1 < packages/database/prisma/rls/policies.sql"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.0",
+    "prettier": "^3.4.2",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "turbo": "^2.3.3",
+    "typescript": "^5.9.3"
+  }
+}

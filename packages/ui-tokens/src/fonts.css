@@ -1,0 +1,23 @@
+/**
+ * @starter/ui-tokens — fonts.css
+ *
+ * DEPRECATED — kept as a placeholder so existing imports don't break.
+ *
+ * The brand font (Inter) is now loaded per-app via `next/font/google` in
+ * each consuming app's `layout.tsx` (e.g. apps/web/src/app/layout.tsx).
+ * The `--font-sans` wire-up to Tailwind's font-sans utility lives in
+ * each app's own `globals.css` via:
+ *
+ *   @theme inline {
+ *     --font-sans: var(--font-inter, system-ui, sans-serif);
+ *   }
+ *
+ * This file used to contain the previous brand font's `@font-face`
+ * declarations + html/body font-family override + the `--font-sans`
+ * wire-up. All three were removed when the brand font switched to
+ * Inter (see commit history) and the wire-up moved to
+ * next/font + globals.css.
+ *
+ * If you need to add a brand font for a non-Next.js consumer (mobile,
+ * Storybook, static site), add the `@font-face` declarations here.
+ */

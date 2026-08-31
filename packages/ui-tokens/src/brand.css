@@ -1,0 +1,31 @@
+/**
+ * @starter/ui-tokens — brand.css
+ *
+ * Per-project brand overrides. This is the ONLY file you edit when
+ * starting a new project. Everything else cascades from
+ * `@paalstack/react-ui/all.css` (which the consumer imports in
+ * globals.css BEFORE this file). Last :root declaration wins.
+ *
+ * Defaults below are near-shadcn slate so the starter looks neutral.
+ * Override with the project brand, e.g.:
+ *   --primary   #001a4c → oklch(0.238 0.099 260.3)   (deep navy)
+ *   --secondary #62b132 → oklch(0.684 0.178 136.1)   (brand green)
+ */
+
+:root {
+  /* ── Brand slots (override these for a new project) ─────────────── */
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+}
+
+.dark {
+  /* ── Brand slots in dark mode (override these for a new project) ── */
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+}

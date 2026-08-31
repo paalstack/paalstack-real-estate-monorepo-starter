@@ -79,6 +79,23 @@ packages/
 | `pnpm db:policies`                         | Re-apply policies.sql directly (idempotent)                              |
 | `pnpm test`                                | All package tests (unit runs anywhere; DB suite needs live Postgres)     |
 | `pnpm type-check` / `pnpm lint`            | Gates that must stay green                                               |
+| `bash scripts/build-pages.sh`              | Rebuild the docs site locally into `dist-pages/` (needs pandoc)          |
+
+## Docs site (GitHub Pages)
+
+Pushes to `main` publish the repo's own documentation — `README.md` and
+`AGENTS.md` — as a static site (`.github/workflows/pages.yml`). Pandoc
+converts the markdown at deploy time, so the pages always match the
+source. The first run also enables Pages on the repo automatically; no
+Settings change needed. Local preview: `bash scripts/build-pages.sh`,
+then open `dist-pages/index.html`.
+
+Note: the Next.js app in `apps/web` is deliberately NOT published to
+Pages — it is a server-rendered app (better-auth sessions, BFF proxy
+routes) and cannot run as static files. It keeps its own deploy target
+(`apps/web/vercel.json`). On a private repo, the Pages deploy step also
+needs a plan that includes Pages; on free org accounts the fix is to
+make the repo public or upgrade.
 
 ## Security model (read before touching data access)
 

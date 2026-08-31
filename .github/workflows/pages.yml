@@ -1,0 +1,72 @@
+# Docs site -> GitHub Pages.
+#
+# Builds a static docs site from the repo's own markdown (README.md +
+# AGENTS.md) using scripts/build-pages.sh, then publishes it with the
+# official Pages actions. The web app itself is NOT published here —
+# it is a server-rendered app (better-auth + BFF routes); it deploys
+# via its own target (apps/web/vercel.json).
+#
+# First run: the configure-pages step enables the Pages site on the repo
+# automatically, so there is no manual setup in repo Settings. Private
+# repos need a GitHub plan that includes Pages (Team/Enterprise for org
+# accounts); on a free plan the deploy step fails with a billing error
+# and the fix is to make the repo public or upgrade.
+#
+# Local rebuild: bash scripts/build-pages.sh  (needs pandoc; writes dist-pages/)
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; a newer push cancels a stale build.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # ubuntu-latest images ship pandoc, but do not depend on that staying true.
+      - name: Install pandoc if missing
+        run: |
+          if ! command -v pandoc >/dev/null 2>&1; then
+            sudo apt-get update -q
+            sudo apt-get install -y -q pandoc
+          fi
+
+      # enablement: true creates the Pages site on first run — no manual
+      # Settings -> Pages clicking needed.
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Build docs site
+        run: bash scripts/build-pages.sh
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist-pages
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

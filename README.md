@@ -86,9 +86,13 @@ packages/
 Pushes to `main` publish the repo's own documentation — `README.md` and
 `AGENTS.md` — as a static site (`.github/workflows/pages.yml`). Pandoc
 converts the markdown at deploy time, so the pages always match the
-source. The first run also enables Pages on the repo automatically; no
-Settings change needed. Local preview: `bash scripts/build-pages.sh`,
-then open `dist-pages/index.html`.
+source. Local preview: `bash scripts/build-pages.sh`, then open
+`dist-pages/index.html`.
+
+One-time enablement (a workflow token cannot create the Pages site):
+`gh api -X POST repos/<org>/<repo>/pages -f build_type=workflow`, or
+Settings -> Pages -> Source: GitHub Actions. Done once for this repo
+(made public 2026-08-31; Pages is plan-limited on private repos).
 
 Note: the Next.js app in `apps/web` is deliberately NOT published to
 Pages — it is a server-rendered app (better-auth sessions, BFF proxy

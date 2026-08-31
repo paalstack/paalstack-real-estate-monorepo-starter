@@ -6,11 +6,14 @@
 # it is a server-rendered app (better-auth + BFF routes); it deploys
 # via its own target (apps/web/vercel.json).
 #
-# First run: the configure-pages step enables the Pages site on the repo
-# automatically, so there is no manual setup in repo Settings. Private
-# repos need a GitHub plan that includes Pages (Team/Enterprise for org
-# accounts); on a free plan the deploy step fails with a billing error
-# and the fix is to make the repo public or upgrade.
+# Enabling Pages from CI needs one of:
+#   - a repo admin creating the site once:
+#       gh api -X POST repos/<org>/<repo>/pages -f build_type=workflow
+#   - or Settings -> Pages -> Source: GitHub Actions.
+# The GITHUB_TOKEN alone cannot create the site (resource-not-accessible
+# by integration; on private repos additionally blocked by plan unless
+# the org has paid Pages). The repo is public, so one admin POST was all
+# it took; this comment records that for the next clone of this starter.
 #
 # Local rebuild: bash scripts/build-pages.sh  (needs pandoc; writes dist-pages/)
 name: Pages

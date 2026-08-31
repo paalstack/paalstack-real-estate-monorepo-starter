@@ -995,3 +995,44 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO starter_app;
 
 -- Auth tables (better-auth writes these on the pooled URL too)
 GRANT SELECT, INSERT, UPDATE, DELETE ON "User", "Session", "Account", "Verification" TO starter_app;
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "banExpires" TIMESTAMP(3),
+ADD COLUMN     "banReason" TEXT,
+ADD COLUMN     "banned" BOOLEAN;
+
+-- AlterTable
+ALTER TABLE "Account" ADD COLUMN     "issuer" TEXT;
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Account_issuer_key" ON "Account"("issuer");
+
+-- / followup (): `issuer` must be NON-unique — every
+-- credential account shares 'local:credential', so the unique index from the
+-- previous migration would cap the CRM at one credential user. This migration
+-- drops that unique index (live DB had it dropped manually, recorded via
+-- prisma migrate resolve).
+DROP INDEX IF EXISTS "Account_issuer_key";
+-- Jwks — required by better-auth's jwt() plugin. Its absence made every
+-- GET /api/auth/get-session throw "Model jwks does not exist" (500), which
+-- broke authClient.useSession() across the web UI. Column set follows
+-- better-auth 1.7's jwt() plugin schema: publicKey/privateKey/createdAt
+-- required; the rest nullable but written even in HS256/EdDSA lazy-key mode.
+-- NOTE: column order matches prisma db push's alphabetical layout so
+-- existing dev databases (already pushed manually) are identical to what
+-- `migrate deploy` would create.
+CREATE TABLE "Jwks" (
+    "id" TEXT NOT NULL,
+    "publicKey" TEXT NOT NULL,
+    "privateKey" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "alg" TEXT,
+    "crv" TEXT,
+    "e" TEXT,
+    "expiresAt" TIMESTAMP(3),
+    "kid" TEXT,
+    "kty" TEXT,
+    "n" TEXT,
+    "use" TEXT,
+
+    CONSTRAINT "Jwks_pkey" PRIMARY KEY ("id")
+);

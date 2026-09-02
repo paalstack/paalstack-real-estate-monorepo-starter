@@ -19,8 +19,15 @@
   ],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "dist/**",
+        ".next/**",
+        "!.next/cache/**",
+        "node_modules/.prisma/client/**"
+      ],
       "inputs": ["$TURBO_DEFAULT$", "^tsconfig.base.json", "!README.md", "!docs/**"]
     },
     "dev": {

@@ -4,6 +4,8 @@ import { Inter } from 'next/font/google';
 import NextTopLoader from 'nextjs-toploader';
 import { type ReactNode } from 'react';
 
+import { ServiceWorkerRegistrar } from '@/components/service-worker-registrar';
+import { InstallPrompt } from '@/components/install-prompt';
 import { Providers } from '@/providers';
 
 import '@/styles/globals.css';
@@ -45,6 +47,21 @@ export const metadata: Metadata = {
     index: false, // Internal CRM — not indexed
     follow: false,
   },
+  // PWA manifest. Next.js file convention `app/manifest.ts` is auto-served
+  // at `/manifest.webmanifest`. We serve the manifest as a static file
+  // instead (apps/web/public/manifest.webmanifest) — see the comment on
+  // the proxy.ts matcher: Vercel Deployment Protection intercepts the
+  // route-handler-served manifest URL with 307, breaking Lighthouse's
+  // installability check. The static file bypasses the edge auth.
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    title: 'Real Estate Starter',
+    // `black-translucent` lets the WebView's status bar float over the
+    // app's surface — required for iOS "Add to Home Screen" to render
+    // a real splash instead of a screenshot.
+    statusBarStyle: 'black-translucent',
+  },
 };
 
 export const viewport: Viewport = {
@@ -69,7 +86,11 @@ const RootLayout = ({ children }: RootLayoutProps) => {
     <html lang="en" suppressHydrationWarning>
       <body className={cn(inter.variable, 'font-sans antialiased')}>
         <NextTopLoader showSpinner={false} height={5} color="var(--foreground)" />
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <ServiceWorkerRegistrar />
+          <InstallPrompt />
+        </Providers>
       </body>
     </html>
   );

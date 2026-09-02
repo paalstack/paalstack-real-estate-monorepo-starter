@@ -73,9 +73,13 @@ export default function LeadDetailPage() {
   );
 }
 
-// StatusBadge is intentionally exported from the inbox page module —
-// reuse it here on live data:
-export { StatusBadge } from '../page';
+// StatusBadge is imported from the shared component — Next.js 16's
+// generated `.next/types/app/...ts` validator rejects re-exporting
+// anything other than `default` / `metadata` / etc. from an App Router
+// page (the page's export map has a `{ [x: string]: never }`
+// constraint). The shared component lives at
+// `apps/web/src/components/shared/LeadStatusBadge.tsx`; import it
+// directly here instead of re-exporting.
 
 function LeadTabsPanel({
   lead,

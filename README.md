@@ -74,7 +74,11 @@ packages/
 
 | Command                                    | What it does                                                             |
 | ------------------------------------------ | ------------------------------------------------------------------------ |
-| `pnpm docker:up`                           | Start postgres/pgbouncer/redis (edoburu pgbouncer; ini is authoritative) |
+| `pnpm docker:up`                           | Start postgres/pgbouncer/redis only (edoburu pgbouncer; ini is authoritative) — use when you want the data services without the api container |
+| `pnpm docker:stack`                        | Start the full stack: postgres + pgbouncer + redis + api (the compiled-CJS container). Runs on the same ports as `pnpm dev` (3000 / 8080) — convenient for verifying the production image locally |
+| `pnpm docker:down`                         | Stop and remove containers (volumes preserved) |
+| `pnpm docker:logs`                         | Tail logs from all services (`-f` follow) |
+| `pnpm docker:restart`                      | Restart containers — useful after `.env` changes |
 | `pnpm --filter @starter/database generate` | Generate the Prisma client (gitignored — required after install)         |
 | `pnpm --filter @starter/database migrate`  | Apply schema + RLS (prisma migrate)                                      |
 | `pnpm --filter @starter/database seed`     | Owner + admin + manager + team + staff (placeholders unless SEED_* set) |
@@ -86,25 +90,29 @@ packages/
 
 ### Dev vs Docker stack
 
-Both `pnpm dev` and `pnpm docker:up` bind ports 3000 (web) and 8080
-(api). On the dev loop, workspace packages are built incrementally:
+Both `pnpm dev` and `pnpm docker:stack` bind ports 3000 (web) and
+8080 (api). On the dev loop, workspace packages are built incrementally:
 
-- **For the dev loop (hot-reload, `tsc --watch`):** `pnpm dev` — runs the
-  backend via `tsx watch src/main.ts` (raw TS, no CJS needed) and
-  the web via `next dev`. Edits to workspace packages are picked up
-  directly — `tsx` reads the `.ts` source on each invocation, so
-  there's no `dist/` rebuild dance to manage. Faster iteration;
-  ships no `dist/` artifacts.
+- **For the dev loop (hot-reload, `tsc --watch`):** `pnpm docker:up`
+  then `pnpm dev` — `docker:up` brings up just the data services
+  (postgres + pgbouncer + redis). `pnpm dev` runs the backend via
+  `tsx watch src/main.ts` (raw TS, no CJS needed) and the web via
+  `next dev`. Edits to workspace packages are picked up directly —
+  `tsx` reads the `.ts` source on each invocation, so there's no
+  `dist/` rebuild dance to manage. Faster iteration; ships no
+  `dist/` artifacts.
 - **For verifying the production image locally (or running on a VPS):**
-  `pnpm build && pnpm docker:up` — `pnpm build` fans out through
-  turbo's `^build` dep graph, builds every workspace package's
-  CJS `dist/`, then builds the NestJS app via `nest build`. The
-  multi-stage `apps/backend/Dockerfile` does the same thing on a
-  fresh Node 22-alpine base. Required because every package's
-  `package.json#main` points at `./dist/index.js` (per Round 27 of
-  `CHANGELOG.md`) — `require('@starter/database')` from CJS
-  Nest output resolves through the symlinked `node_modules` to
-  the package's compiled CJS.
+  `pnpm docker:stack` — the multi-stage `apps/backend/Dockerfile`
+  builds every workspace package's CJS `dist/` and the NestJS app
+  on a fresh Node 22-alpine base. `docker:stack` brings up the
+  full stack including the compiled-CJS api container. Required
+  because every package's `package.json#main` points at
+  `./dist/index.js` (per Round 27 of `CHANGELOG.md`) —
+  `require('@starter/database')` from CJS Nest output resolves
+  through the symlinked `node_modules` to the package's compiled
+  CJS.
+
+Switching: `pnpm docker:down` (or `pnpm docker:stack` to come back).
 
 ## Docs site (GitHub Pages)
 

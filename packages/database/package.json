@@ -25,7 +25,7 @@
     "test": "vitest run",
     "seed": "tsx --env-file=../../.env src/seed.ts",
     "format": "echo '(prisma format)' && prisma format",
-    "docker:up": "cd ../../docker && docker compose up -d postgres pgbouncer redis"
+    "docker:up": "cd ../../docker && docker compose --env-file ../.env up -d postgres pgbouncer redis"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",

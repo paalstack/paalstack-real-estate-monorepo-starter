@@ -18,10 +18,14 @@
     "db:generate": "pnpm --filter @starter/database generate",
     "db:migrate": "pnpm --filter @starter/database migrate",
     "db:studio": "pnpm --filter @starter/database studio",
+    "db:seed": "pnpm --filter @starter/database seed",
+    "db:policies": "docker exec -i starter-postgres psql -U starter -d starter_crm -v ON_ERROR_STOP=1 < packages/database/prisma/rls/policies.sql",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md,mdx}\" --cache",
     "docker:up": "pnpm --filter @starter/database docker:up",
-    "db:seed": "pnpm --filter @starter/database seed",
-    "db:policies": "docker exec -i starter-postgres psql -U starter -d starter_crm -v ON_ERROR_STOP=1 < packages/database/prisma/rls/policies.sql"
+    "docker:stack": "docker compose --env-file .env -f docker/docker-compose.yml up -d",
+    "docker:down": "docker compose --env-file .env -f docker/docker-compose.yml down",
+    "docker:logs": "docker compose --env-file .env -f docker/docker-compose.yml logs -f",
+    "docker:restart": "docker compose --env-file .env -f docker/docker-compose.yml restart"
   },
   "devDependencies": {
     "@types/node": "^26.4.0",

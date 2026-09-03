@@ -23,6 +23,7 @@
   "files": ["dist", "src", "README.md"],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist tsconfig.build.tsbuildinfo",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"

@@ -35,6 +35,21 @@ const nextConfig: NextConfig = {
     '@paalstack/react-icons',
     '@starter/ui-tokens',
     '@starter/auth',
+    // Round 28 (2026-09-03) — added the rest of the workspace
+    // packages the web app imports. @starter/auth transitively
+    // pulls in @starter/database via its CJS dist (require() at
+    // the top of packages/auth-client/dist/auth.js), and the BFF
+    // route + offline pages import database/offline-store
+    // directly. Without these entries, Next's bundler can't
+    // resolve @starter/database through the pnpm workspace
+    // symlink on Vercel (the symlink resolves to a package
+    // whose main is ./dist/index.js, but Vercel's build doesn't
+    // run pnpm build first, so dist/ doesn't exist at bundle
+    // time). Transpiling the source instead of bundling the
+    // emitted CJS bypasses the dist/ dependency entirely.
+    '@starter/database',
+    '@starter/api-types',
+    '@starter/offline-store',
   ],
 
   images: {

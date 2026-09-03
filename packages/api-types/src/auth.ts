@@ -71,11 +71,11 @@ export const CreateUserDtoSchema = SignupDtoSchema.extend({
 export type CreateUserDto = z.infer<typeof CreateUserDtoSchema>;
 
 /**
- * PATCH /api/users/:id/role — role change. SUPER_ADMIN can
- * change anyone into anything (except into/out of SUPER_ADMIN); ADMIN can
- * change MANAGER/TELECALLER/SALES_EXEC into MANAGER/TELECALLER/SALES_EXEC;
+ * PATCH /api/users/:id/role — role change. OWNER can change anyone
+ * into anything (except into/out of OWNER); ADMIN can change
+ * MANAGER/TELECALLER/SALES_EXEC into MANAGER/TELECALLER/SALES_EXEC;
  * MANAGER the same within their team. Guards: no self-changes,
- * demoting a team-leading manager is blocked, SUPER_ADMIN unassignable.
+ * demoting a team-leading manager is blocked, OWNER unassignable.
  */
 export const ChangeRoleDtoSchema = z.object({
   role: RoleSchema,

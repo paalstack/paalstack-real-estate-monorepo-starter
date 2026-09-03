@@ -349,8 +349,17 @@ $$;
 -- DELETE grants on every business table + sequences + Session/Account/
 -- Verification (auth tables written by better-auth through the pooled path).
 -- The migration (not this file) is the canonical application point when run
--- via prisma migrate; this block ALSO lives in the migration wrapper so a
+-- via prisma migrate; this block ALSO ALWAYS is in the migration wrapper so a
 -- plain `psql -f policies.sql` works identically.
+
+-- Schema-level USAGE + CREATE grants for starter_app. Without USAGE on
+-- `public`, the table-level GRANTs below are invisible to the role and
+-- every app query fails with `42501 permission denied for schema public`
+-- (or `42P01 relation does not exist`). Round 25 fix: explicit grants
+-- added. CREATE is needed for Prisma's $executeRawUnsafe during bootstrap
+-- migrations. Idempotent at the role level.
+GRANT USAGE, CREATE ON SCHEMA public TO starter_app;
+
 DO $$
 DECLARE t text;
 BEGIN
@@ -371,3 +380,8 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO starter_app;
 
 -- Auth tables (better-auth writes these on the pooled URL too)
 GRANT SELECT, INSERT, UPDATE, DELETE ON "User", "Session", "Account", "Verification" TO starter_app;
+
+-- Jwks — better-auth's jwt() plugin key store. Added in init migration
+-- (consolidated with the rest); the migration also lacks the GRANTs
+-- (Round 25 fix). Listed here for future psql -f policies.sql runs.
+GRANT SELECT, INSERT, UPDATE, DELETE ON "Jwks" TO starter_app;

@@ -1,0 +1,2 @@
+-- Add OWNER to the Role enum (Round 21 rename of SUPER_ADMIN → OWNER).
+ALTER TYPE "Role" ADD VALUE IF NOT EXISTS 'OWNER' BEFORE 'ADMIN';

@@ -3,12 +3,23 @@ import { prisma } from './index';
 
 // ────────────────────────────────────────────────────────────────────────────
 // Real Estate Starter — bootstrap seed.
-// / (): credentials are created in the EXACT shape better-auth
-// 1.7 expects at sign-in (dist/api/routes/sign-in.mjs:320):
+// Round 21 renamed the org-owner role SUPER_ADMIN → OWNER.
+// Round 22 added a second ADMIN placeholder so the OWNER isn't the only
+// account that can create managers + admins out of the box.
+// Round 23 aligned placeholder emails with role names:
+//   OWNER       → owner@example.in
+//   ADMIN       → admin@example.in
+//   MANAGER     → manager@example.in
+//   TELECALLER  → telecaller@example.in
+//   SALES_EXEC  → sales_exec@example.in
+// Each email mirrors the role name (Round 23) so they're
+// discoverable in a fresh clone.
+// Credentials are created in the EXACT shape better-auth 1.7 expects at
+// sign-in (dist/api/routes/sign-in.mjs:320):
 //   account.accountId === user.id  AND  account.issuer === 'local:credential'
-// Passwords use @better-auth/utils scrypt params (N=16384, r=16, p=1, dkLen=64,
-// NFKC-normalized) stored as "salt:key".
-// Placeholder fallbacks per the plan — rotate on first login .
+// Passwords use @better-auth/utils scrypt params (N=16384, r=16, p=1,
+// dkLen=64, NFKC-normalized) stored as "salt:key". Placeholders MUST be
+// rotated on first login.
 // ────────────────────────────────────────────────────────────────────────────
 
 function hashPassword(password: string): string {
@@ -29,21 +40,36 @@ interface SeedUser {
   password: string;
 }
 
-function readSeedUser(prefix: 'SUPER_ADMIN' | 'MANAGER' | 'TELECALLER' | 'SALES_EXEC'): SeedUser {
-  // Fallback: fall back to documented placeholder users so a fresh
-  // clone can seed before the client roster arrives. Placeholders MUST be
-  // rotated on first login. Locked: the ADMIN placeholder
-  // is now the single SUPER_ADMIN (exactly one exists — partial unique
-  // index one_super_admin).
-  const email =
-    process.env[`SEED_${prefix}_EMAIL`] ??
-    `${prefix === 'SUPER_ADMIN' ? 'admin' : prefix.toLowerCase()}@example.in`;
-  const name =
-    process.env[`SEED_${prefix}_NAME`] ??
-    `${prefix === 'SUPER_ADMIN' ? 'Super Admin' : prefix[0] + prefix.slice(1).toLowerCase()} (placeholder)`;
-  const password =
-    process.env[`SEED_${prefix}_PASSWORD`] ??
-    `${prefix === 'SUPER_ADMIN' ? 'admin' : prefix.toLowerCase()}_placeholder_pw`;
+function readSeedUser(
+  prefix: 'OWNER' | 'ADMIN' | 'MANAGER' | 'TELECALLER' | 'SALES_EXEC',
+): SeedUser {
+  // Fallback: documented placeholder users per role. Each email mirrors
+  // the role name (Round 23 swap from admin/admin2 → owner@/admin@).
+  const FALLBACK_EMAIL: Record<typeof prefix, string> = {
+    OWNER: 'owner@example.in',
+    ADMIN: 'admin@example.in',
+    MANAGER: 'manager@example.in',
+    TELECALLER: 'telecaller@example.in',
+    SALES_EXEC: 'sales_exec@example.in',
+  };
+  const FALLBACK_NAME: Record<typeof prefix, string> = {
+    OWNER: 'Owner',
+    ADMIN: 'Admin',
+    MANAGER: 'Manager',
+    TELECALLER: 'Telecaller',
+    SALES_EXEC: 'Sales Exec',
+  };
+  const FALLBACK_PASSWORD: Record<typeof prefix, string> = {
+    OWNER: 'owner_placeholder_pw',
+    ADMIN: 'admin_placeholder_pw',
+    MANAGER: 'manager_placeholder_pw',
+    TELECALLER: 'telecaller_placeholder_pw',
+    SALES_EXEC: 'sales_exec_placeholder_pw',
+  };
+
+  const email = process.env[`SEED_${prefix}_EMAIL`] ?? FALLBACK_EMAIL[prefix];
+  const name = process.env[`SEED_${prefix}_NAME`] ?? `${FALLBACK_NAME[prefix]} (placeholder)`;
+  const password = process.env[`SEED_${prefix}_PASSWORD`] ?? FALLBACK_PASSWORD[prefix];
 
   if (!email || !name || !password) {
     throw new Error(
@@ -54,7 +80,7 @@ function readSeedUser(prefix: 'SUPER_ADMIN' | 'MANAGER' | 'TELECALLER' | 'SALES_
   return { email, name, password };
 }
 
-type Role = 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'TELECALLER' | 'SALES_EXEC';
+type Role = 'OWNER' | 'ADMIN' | 'MANAGER' | 'TELECALLER' | 'SALES_EXEC';
 
 /**
  * Upsert user, then upsert the credential account keyed on user.id (the
@@ -102,7 +128,8 @@ async function main() {
     return prisma.$executeRawUnsafe(`SET row_security = off`);
   });
 
-  const superAdmin = readSeedUser('SUPER_ADMIN');
+  const owner = readSeedUser('OWNER');
+  const admin = readSeedUser('ADMIN');
   const manager = readSeedUser('MANAGER');
   const telecaller = readSeedUser('TELECALLER');
   const salesExec = readSeedUser('SALES_EXEC');
@@ -121,13 +148,14 @@ async function main() {
     },
   });
 
-  // ── Super admin (no team), telecaller + sales exec (team members) ────────
-  await upsertUser(superAdmin, 'SUPER_ADMIN');
+  // ── Owner + Admin (no team), telecaller + sales exec (team members) ──
+  await upsertUser(owner, 'OWNER');
+  await upsertUser(admin, 'ADMIN');
   await upsertUser(telecaller, 'TELECALLER', team.id);
   await upsertUser(salesExec, 'SALES_EXEC', team.id);
 
   // eslint-disable-next-line no-console
-  console.log('[seed] ✓ super admin, manager, telecaller, sales exec created/updated');
+  console.log('[seed] ✓ owner, admin, manager, telecaller, sales exec created/updated');
   // eslint-disable-next-line no-console
   console.log(`[seed] team: ${team.name} (${team.id})`);
 }

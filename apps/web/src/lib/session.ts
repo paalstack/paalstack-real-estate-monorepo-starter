@@ -30,7 +30,7 @@ export function useSessionUser(): SessionResult {
 
 /** Admin-class sees everything cross-team; Manager is team-scoped. */
 export function isAdminLike(role: Role | undefined): boolean {
-  return role === 'ADMIN' || role === 'SUPER_ADMIN';
+  return role === 'ADMIN' || role === 'OWNER';
 }
 
 /** Manager: manages a team — sees team pipeline, approval queue. */
@@ -38,7 +38,7 @@ export function isManager(role: Role | undefined): boolean {
   return role === 'MANAGER';
 }
 
-/** Cross-role lead moves are ADMIN/SUPER_ADMIN/MANAGER only. */
+/** Cross-role lead moves are ADMIN/OWNER/MANAGER only. */
 export function canReassign(role: Role | undefined): boolean {
   return isAdminLike(role) || role === 'MANAGER';
 }
@@ -48,7 +48,7 @@ export function canApproveBookings(role: Role | undefined): boolean {
   return isAdminLike(role) || role === 'MANAGER';
 }
 
-/** Audit log: admin + super admin read (the permission matrix). */
+/** Audit log: admin + owner read (the permission matrix). */
 export function canViewAudit(role: Role | undefined): boolean {
   return isAdminLike(role);
 }

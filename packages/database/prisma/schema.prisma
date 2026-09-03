@@ -33,7 +33,7 @@ datasource db {
 // ────────────────────────────────────────────────────────────────────────────
 
 enum Role {
-  SUPER_ADMIN
+  OWNER
   ADMIN
   MANAGER
   SALES_EXEC

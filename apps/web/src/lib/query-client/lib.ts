@@ -7,6 +7,17 @@
  * - Stale times
  * - Error handling
  * - Refetch behavior
+ *
+ * Round 26 (2026-09-03): removed the custom `retryDelay` function
+ * from defaults. TanStack's built-in default is identical
+ * (`Math.min(1000 * 2 ** attemptIndex, 30000)`); redefining it as a
+ * function here meant any code path that serialized a Query (e.g. an
+ * IDB persister via `qc.getQueryCache().getAll()`) hit a
+ * `DataCloneError: Failed to execute 'put' on 'IDBObjectStore'`
+ * because IndexedDB can't structured-clone functions. If you add a
+ * persister later, use `dehydrate()` / `hydrate()` from
+ * `@tanstack/react-query` — they strip non-cloneable fields by
+ * design.
  */
 
 import { QueryClient } from '@tanstack/react-query';
@@ -17,8 +28,9 @@ export const queryClient = new QueryClient({
       // Don't retry failed requests by default
       retry: false,
 
-      // Retry delay increases exponentially (1s, 2s, 4s, ...)
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      // Retry delay omitted — TanStack's built-in default is the
+      // exponential backoff `Math.min(1000 * 2 ** attemptIndex, 30000)`.
+      // See Round 26 above for why this is no longer set explicitly.
 
       // Data is considered fresh for 5 minutes
       staleTime: 5 * 60 * 1000,

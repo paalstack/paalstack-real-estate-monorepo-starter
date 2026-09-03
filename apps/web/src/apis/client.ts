@@ -15,10 +15,10 @@ export class ApiError extends Error {
   }
 }
 
-export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'SALES_EXEC' | 'TELECALLER';
+export type Role = 'OWNER' | 'ADMIN' | 'MANAGER' | 'SALES_EXEC' | 'TELECALLER';
 
 export const STAFF_ROLES: readonly Role[] = [
-  'SUPER_ADMIN',
+  'OWNER',
   'ADMIN',
   'MANAGER',
   'SALES_EXEC',

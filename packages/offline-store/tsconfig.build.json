@@ -3,8 +3,9 @@
   "compilerOptions": {
     "module": "commonjs",
     "moduleResolution": "node",
-    "outDir": "dist",
-    "rootDir": "src",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "types": ["node", "fake-indexeddb"],
     "noEmit": false
   },
   "include": ["src/**/*"],

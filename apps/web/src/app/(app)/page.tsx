@@ -1,7 +1,7 @@
 'use client';
 
 // Role-aware home (the role-based dashboards):
-//   Admin/super admin → cross-team counts + audit stream (admin dashboard)
+//   Admin/owner → cross-team counts + audit stream (admin dashboard)
 //   Manager           → KPI strip + team pipeline sections
 //   Telecaller/Exec   → straight to their queue (Lead Inbox is the home)
 //

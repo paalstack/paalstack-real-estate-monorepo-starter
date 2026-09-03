@@ -49,7 +49,7 @@ export class UsersController {
 
   @Post()
   @ApiOperation({
-    summary: 'Create a user (SUPER_ADMIN/ADMIN: below their role; MANAGER: staff in own team)',
+    summary: 'Create a user (OWNER/ADMIN: below their role; MANAGER: staff in own team)',
   })
   async create(@Req() req: AuthedRequest, @Body() body: unknown): Promise<CreatedUser> {
     // Shared Zod schema validates BEFORE the service is touched (the
@@ -61,7 +61,7 @@ export class UsersController {
   @Patch(':id/role')
   @ApiOperation({
     summary:
-      'Change a user role (SUPER_ADMIN: anyone; ADMIN: below; MANAGER: staff in team). Guards: no self-changes, SUPER_ADMIN unassignable, team-leading managers must be unlinked first.',
+      'Change a user role (OWNER: anyone; ADMIN: below; MANAGER: staff in team). Guards: no self-changes, OWNER unassignable, team-leading managers must be unlinked first.',
   })
   async changeRole(
     @Req() req: AuthedRequest,

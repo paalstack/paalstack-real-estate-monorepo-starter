@@ -16,7 +16,7 @@ cp .env.example .env          # edit secrets (BETTER_AUTH_SECRET, JWT_SECRET)
 pnpm docker:up                # postgres + pgbouncer (session pool) + redis
 pnpm --filter @starter/database generate  # prisma client (gitignored)
 pnpm --filter @starter/database migrate   # schema + RLS policies + grants
-pnpm --filter @starter/database seed      # super admin + manager + staff
+pnpm --filter @starter/database seed      # owner + admin + manager + 2 staff
 pnpm dev                      # turbo dev — web :3000, api :8080
 ```
 
@@ -25,13 +25,14 @@ account (rotate these before any real use):
 
 | Email                 | Role                            | Password                    |
 | --------------------- | ------------------------------- | --------------------------- |
-| admin@example.in      | SUPER_ADMIN (exactly one, ever) | `admin_placeholder_pw`      |
+| owner@example.in      | OWNER (exactly one, ever)      | `owner_placeholder_pw`      |
+| admin@example.in      | ADMIN                           | `admin_placeholder_pw`      |
 | manager@example.in    | MANAGER                         | `manager_placeholder_pw`    |
 | telecaller@example.in | TELECALLER                      | `telecaller_placeholder_pw` |
 | sales_exec@example.in | SALES_EXEC                      | `sales_exec_placeholder_pw` |
 
-Role model: SUPER_ADMIN ⊃ ADMIN ⊃ MANAGER ⊃ TELECALLER / SALES_EXEC. The
-super admin creates admins; admins create managers + staff; managers create
+Role model: OWNER ⊃ ADMIN ⊃ MANAGER ⊃ TELECALLER / SALES_EXEC. The
+owner creates admins; admins create managers + staff; managers create
 staff in their own team. Role changes follow the same hierarchy and are
 written to the audit log. Users are created/changed via the API
 (`POST /api/users`, `PATCH /api/users/:id/role`) until the admin UI lands.
@@ -75,7 +76,7 @@ packages/
 | `pnpm docker:up`                           | Start postgres/pgbouncer/redis (edoburu pgbouncer; ini is authoritative) |
 | `pnpm --filter @starter/database generate` | Generate the Prisma client (gitignored — required after install)         |
 | `pnpm --filter @starter/database migrate`  | Apply schema + RLS (prisma migrate)                                      |
-| `pnpm --filter @starter/database seed`     | Super admin + manager + team + staff (placeholders unless SEED_* set)    |
+| `pnpm --filter @starter/database seed`     | Owner + admin + manager + team + staff (placeholders unless SEED_* set) |
 | `pnpm db:policies`                         | Re-apply policies.sql directly (idempotent)                              |
 | `pnpm test`                                | All package tests (unit runs anywhere; DB suite needs live Postgres)     |
 | `pnpm type-check` / `pnpm lint`            | Gates that must stay green                                               |
@@ -110,11 +111,11 @@ make the repo public or upgrade.
   `@starter/database`. Bare-prisma access bypasses RLS and is reserved for
   migrations, seed, auth tables (User/Session/Account), Team writes
   (RLS-forced with zero policies), and system crons.
-- Roles are the Prisma `Role` enum (UPPERCASE): `SUPER_ADMIN | ADMIN |
-MANAGER | SALES_EXEC | TELECALLER`. JWT claims are validated in
+- Roles are the Prisma `Role` enum (UPPERCASE): `OWNER | ADMIN |
+  MANAGER | SALES_EXEC | TELECALLER`. JWT claims are validated in
   `packages/auth-client/src/jwt.ts` — a token without a valid role claim is
-  rejected. Exactly one SUPER_ADMIN exists (partial unique index
-  `one_super_admin`); it cannot be created or assigned through the API.
+  rejected. Exactly one OWNER exists (partial unique index
+  `one_owner`); it cannot be created or assigned through the API.
 - `@Public()` is for health, auth, and signature-verified webhooks only.
   Nowhere else.
 
@@ -136,5 +137,5 @@ Schema changes flow ONLY through Prisma migrations
 (`packages/database/prisma/migrations/`). RLS policy changes belong in the
 same migration as the table change — keep `prisma/rls/policies.sql` as the
 canonical source and copy into the migration. Postgres-level constraints that
-Prisma can't express (e.g. the partial unique index `one_super_admin`) live
+Prisma can't express (e.g. the partial unique index `one_owner`) live
 in their own native-SQL migrations.

@@ -35,7 +35,7 @@ client data, no project-specific business copy.
 - Global guard is JWT (`@Public()` opts out). `@Public()` is allowed ONLY on:
   health probe, auth endpoints, and signature-verified webhook receivers.
   Adding it anywhere else fails review.
-- Roles are Prisma enum values (UPPERCASE): `SUPER_ADMIN | ADMIN | MANAGER |
+- Roles are Prisma enum values (UPPERCASE): `OWNER | ADMIN | MANAGER |
 SALES_EXEC | TELECALLER`. Never hand-roll role strings.
 - Errors: never swallow. Each module maps its known failure classes to typed
   exceptions (what/why/fix).

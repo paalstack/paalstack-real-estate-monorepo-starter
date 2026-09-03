@@ -53,3 +53,8 @@ infra/data/
 
 # Pages build output (scripts/build-pages.sh)
 dist-pages/
+.vercel
+# Local env files; keep .env.example templates tracked via !-rules below
+.env*
++!.env.example
++!packages/database/.env.example

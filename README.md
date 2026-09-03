@@ -34,8 +34,9 @@ account (rotate these before any real use):
 Role model: OWNER ⊃ ADMIN ⊃ MANAGER ⊃ TELECALLER / SALES_EXEC. The
 owner creates admins; admins create managers + staff; managers create
 staff in their own team. Role changes follow the same hierarchy and are
-written to the audit log. Users are created/changed via the API
-(`POST /api/users`, `PATCH /api/users/:id/role`) until the admin UI lands.
+written to the audit log (see `CHANGELOG.md` Rounds 21–27). Users are
+created/changed via the API (`POST /api/users`,
+`PATCH /api/users/:id/role`) until the admin UI lands.
 
 ## Branding a new project
 
@@ -78,9 +79,32 @@ packages/
 | `pnpm --filter @starter/database migrate`  | Apply schema + RLS (prisma migrate)                                      |
 | `pnpm --filter @starter/database seed`     | Owner + admin + manager + team + staff (placeholders unless SEED_* set) |
 | `pnpm db:policies`                         | Re-apply policies.sql directly (idempotent)                              |
+| `pnpm build`                               | Build every workspace package (`tsc -p tsconfig.build.json`) and the NestJS app (`nest build`). Required before `node apps/backend/dist/main.js` runs — the package `main` fields point at `dist/index.js`. Without this, prod-mode `require('@starter/database')` resolves to a package with no `dist/`.        |
 | `pnpm test`                                | All package tests (unit runs anywhere; DB suite needs live Postgres)     |
 | `pnpm type-check` / `pnpm lint`            | Gates that must stay green                                               |
 | `bash scripts/build-pages.sh`              | Rebuild the docs site locally into `dist-pages/` (needs pandoc)          |
+
+### Dev vs Docker stack
+
+Both `pnpm dev` and `pnpm docker:up` bind ports 3000 (web) and 8080
+(api). On the dev loop, workspace packages are built incrementally:
+
+- **For the dev loop (hot-reload, `tsc --watch`):** `pnpm dev` — runs the
+  backend via `tsx watch src/main.ts` (raw TS, no CJS needed) and
+  the web via `next dev`. Edits to workspace packages are picked up
+  directly — `tsx` reads the `.ts` source on each invocation, so
+  there's no `dist/` rebuild dance to manage. Faster iteration;
+  ships no `dist/` artifacts.
+- **For verifying the production image locally (or running on a VPS):**
+  `pnpm build && pnpm docker:up` — `pnpm build` fans out through
+  turbo's `^build` dep graph, builds every workspace package's
+  CJS `dist/`, then builds the NestJS app via `nest build`. The
+  multi-stage `apps/backend/Dockerfile` does the same thing on a
+  fresh Node 22-alpine base. Required because every package's
+  `package.json#main` points at `./dist/index.js` (per Round 27 of
+  `CHANGELOG.md`) — `require('@starter/database')` from CJS
+  Nest output resolves through the symlinked `node_modules` to
+  the package's compiled CJS.
 
 ## Docs site (GitHub Pages)
 
